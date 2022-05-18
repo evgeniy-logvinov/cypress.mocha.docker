@@ -1,2 +1,57 @@
 # cypress.mocha.docker
-Cypress repo with mocha generated report from docker
+
+```
+docker build -t cypress-mocha-docker .
+```
+
+```
+docker compose run e2e-test
+```
+
+## Instructions
+
+STEP 1 - Should have a Working Cypress Project and Docker setup on your local machine.
+If not, kindly refer to the following link : -
+https://docs.docker.com/engine/install/
+STEP 2 - Create a Dockerfile to build an image for your Project. 
+Rather then building everything from scratch we will extend an existing Cypress Docker images.
+GitHub page for Docker images is https://github.com/cypress-io/cypress-docker-images.
+We will pick cypress/included since it has all operating system dependencies, Cypress, and some browsers installed globally. 
+This image has Debian GNU/Linux 10 (buster) Operating System.
+                FROM cypress/included:6.8.0
+                RUN mkdir /cypress-docker
+                WORKDIR /cypress-docker
+                COPY ./package.json .
+                COPY ./package-lock.json .
+                COPY ./cypress.json .
+                COPY ./cypress ./cypress
+                RUN npm install
+                ENTRYPOINT ["npm", "run"]
+Add to build an image use - docker build -t cypress-mocha-docker .
+
+Some Important Terms - 
+IMAGE - A Docker image is a read-only template that contains a set of instructions for creating a container that can run on the Docker platform. It provides a convenient way to package up applications and preconfigured server environments, which you can use for your own private use or share publicly with other Docker users.
+
+In simple words you can say an image is a static snapshot of container's configuration.
+
+CONTAINER -  A container is a runnable instance of an image. You can create, start, stop, move, or delete a container using the Docker API or CLI. You can connect a container to one or more networks, attach storage to it, or even create a new image based on its current state.
+
+In simple words you can say a container is an application sandbox. Each container is based on an image.
+
+ENTRYPOINT - An ENTRYPOINT allows you to configure a container that will run as an executable. 
+            Command line arguments to docker run <image> will be appended after all elements in an exec form ENTRYPOINT, and will override all elements specified using CMD. 
+            This allows arguments to be passed to the entry point, i.e., docker run <image> -d will pass the -d argument to the entry point. 
+            You can override the ENTRYPOINT instruction using the docker run --entrypoint flag.
+            
+COMMAND - The main purpose of a CMD is to provide defaults for an executing container. These defaults can include an executable, or they can omit the executable, in which case you must specify an ENTRYPOINT instruction as well.
+
+We are building this images to overwrite ENTRYPOINT of our base image, cypress/included:6.8.0.
+This will allow us to pick our specific commands from package.json file. And hence, we get the ability to generate Mochawesome report .
+
+VOLUME - By default all files created inside a container are stored on a writable container layer.
+        The data doesn’t persist when that container no longer exists, and it can be difficult to get the data out of the container if another process needs it.
+        Docker via volume offers the data persistence capability, which means the files are persisted even after the container stops.
+
+STEP 3 - Create a docker-compose.yml file - 
+        This will allow us to run cypress on different browsers with just one command, docker-compose run e2e-chrome.
+        We can also achieve parallel Cypress run on different browser by just saying docker-compose up. 
